@@ -4,20 +4,53 @@ import { DeleteIcon } from '@chakra-ui/icons'
 import {
   Image,
   Input,
-  IconButton
+  IconButton,
+  Button
 } from '@chakra-ui/react'
 
+// const API_URL = "https://localhost:7229";
+const API_URL = "https://gamingapi.azurewebsites.net";
+
 function App() {
-  const [newCard, setNewCard] = useState(null)
+  const [newCard, setNewCard] = useState({
+    name: "",
+    top: "",
+    bottom: "",
+    left: "",
+    right: "",
+  })
+
   const [allCards, setAllCards] = useState([])
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
-    fetch("https://gamingapi.azurewebsites.net/api/cards")
+    debugger
+    fetch(`${API_URL}/api/cards`)
       .then((response) => response.json())
       .then((data) => {
         setAllCards(data)
       });
   }, [])
+
+  const handleCardChange = (evt) => {
+    newCard[evt.target.name] = newCard.evt.target.value
+    debugger
+    setNewCard(newCard)
+  }
+
+  const submitNewCard = () => {
+    const formData = new FormData();
+    formData.append("file", selectedImage);
+    formData.append("card", newCard);
+
+    fetch(`https://localhost:7229/api/cards`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData
+    })
+  }
 
   return (
     <div className="flex w-full h-full bg-[#F5F7FB]">
@@ -30,8 +63,8 @@ function App() {
         </div>
         <div className='grid grid-flow-col gap-6 p-4'>
           {allCards.map((card) => (
-            <div className='flex flex-col w-64 p-2 items-center bg-white rounded-lg'>
-              <div className='font-bold'>{card.name || "No Name"}</div>
+            <div key={card.id} className='flex flex-col w-64 p-2 items-center bg-white rounded-lg'>
+              <div className='font-bold'>{card.name || card.id}</div>
               <div>Top: {card.top} / Right: {card.right}</div>
               <div>Bottom: {card.bottom} / Left: {card.left}</div>
               <div>
@@ -46,24 +79,25 @@ function App() {
 
           <div className='flex flex-col w-64 p-2 items-center bg-white rounded-lg'>
             <div className='font-bold'>
-              <Input placeholder='Nom de la carte'></Input>
+              <Input placeholder='Nom de la carte' name="name" value={newCard.name} onChange={handleCardChange}></Input>
             </div>
             <div className='align-center'>
-              <Input className='' placeholder='Top' />
+              <Input className='' value={newCard.top} onChange={handleCardChange} placeholder='Top' />
             </div>
             <div className='flex flex-row'>
-              <Input className='' placeholder='Left' />
-              <Input className='' placeholder='Right' />
+              <Input className='' value={newCard.left} onChange={handleCardChange} placeholder='Left' />
+              <Input className='' value={newCard.right} onChange={handleCardChange} placeholder='Right' />
             </div>
             <div>
-              <Input className='' placeholder='Bottom' />
+              <Input className='' placeholder='Bottom' value={newCard.bottom} onChange={handleCardChange} />
             </div>
             <div>
               <fieldset>
                 Image
-                <Input type={'file'} />
+                <Input type={'file'} value={selectedImage} onChange={(e) => setSelectedImage(e.target.files[0])} />
               </fieldset>
             </div>
+            <div><Button onClick={submitNewCard}>Créer</Button></div>
           </div>
         </div>
       </div>
