@@ -24,7 +24,6 @@ function App() {
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
-    debugger
     fetch(`${API_URL}/api/cards`)
       .then((response) => response.json())
       .then((data) => {
@@ -33,23 +32,38 @@ function App() {
   }, [])
 
   const handleCardChange = (evt) => {
-    newCard[evt.target.name] = newCard.evt.target.value
-    debugger
-    setNewCard(newCard)
+    newCard[evt.target.name] = evt.target.value
+    setNewCard({ ...newCard })
   }
 
-  const submitNewCard = () => {
-    const formData = new FormData();
-    formData.append("file", selectedImage);
-    formData.append("card", newCard);
+  const submitNewCard = async () => {
 
-    fetch(`https://localhost:7229/api/cards`, {
+    const uploadResponse = await fetch(`${API_URL}/api/storage`, {
       method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'multipart/form-data',
+        'Accept': "application/json, text/plain, */*",
       },
-      body: formData
+      body: selectedImage
     })
+    const data = await uploadResponse.text()
+
+    newCard.imageUrl = data
+
+    await fetch(`${API_URL}/api/cards`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': "application/json, text/plain, */*",
+      },
+      body: JSON.stringify(newCard)
+    })
+
+    await fetch(`${API_URL}/api/cards`)
+      .then((response) => response.json())
+      .then((data) => {
+        setAllCards(data)
+      });
   }
 
   return (
@@ -77,24 +91,24 @@ function App() {
             </div>
           ))}
 
-          <div className='flex flex-col w-64 p-2 items-center bg-white rounded-lg'>
+          <div className='flex flex-col w-64 p-2 items-center bg-white rounded-lg' >
             <div className='font-bold'>
               <Input placeholder='Nom de la carte' name="name" value={newCard.name} onChange={handleCardChange}></Input>
             </div>
             <div className='align-center'>
-              <Input className='' value={newCard.top} onChange={handleCardChange} placeholder='Top' />
+              <Input className='' value={newCard.top} name="top" onChange={handleCardChange} placeholder='Top' />
             </div>
             <div className='flex flex-row'>
-              <Input className='' value={newCard.left} onChange={handleCardChange} placeholder='Left' />
-              <Input className='' value={newCard.right} onChange={handleCardChange} placeholder='Right' />
+              <Input className='' value={newCard.left} name="left" onChange={handleCardChange} placeholder='Left' />
+              <Input className='' value={newCard.right} name="right" onChange={handleCardChange} placeholder='Right' />
             </div>
             <div>
-              <Input className='' placeholder='Bottom' value={newCard.bottom} onChange={handleCardChange} />
+              <Input className='' placeholder='Bottom' name="bottom" value={newCard.bottom} onChange={handleCardChange} />
             </div>
             <div>
               <fieldset>
                 Image
-                <Input type={'file'} value={selectedImage} onChange={(e) => setSelectedImage(e.target.files[0])} />
+                <Input type={'file'} onChange={(e) => setSelectedImage(e.target.files[0])} />
               </fieldset>
             </div>
             <div><Button onClick={submitNewCard}>Créer</Button></div>
